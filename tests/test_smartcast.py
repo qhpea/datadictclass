@@ -2,7 +2,7 @@
 import dataclasses
 import typing
 import enum
-
+import smartcast
 
 class Ez(enum.Enum):
     MAX = enum.auto()
@@ -17,5 +17,4 @@ class Hey:
 
 
 def test_cast():
-    import smartcast
     smartcast.cast(smartcast.normal([Hey()]), typing.List[Hey])
