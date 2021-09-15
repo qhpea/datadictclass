@@ -3,8 +3,11 @@ import typing
 import enum
 import dataclasses
 
+# flake8: noqa: C901
 def cast(value, typeof):
-    print(f"try cast {value} to {typeof}")
+    """
+    Cast an normal (json) object to specfied type.
+    """
     if typeof is None and not value:
         return None
     if typeof is typing.Union:
@@ -15,30 +18,30 @@ def cast(value, typeof):
         for try_type in possibe_types:
             try:
                 return cast(value, try_type)
-            except:
+            except Exception:
                 pass
         raise Exception("Not one of the Union types.")
-    
+
     print(typeof)
     if type(typeof) == typing._GenericAlias:
         if typeof._name == "List":
             (list_type, ) = typeof.__args__
             return [cast(v, list_type) for v in value]
-        raise Exception(f"unkown GenericAlias")
+        raise Exception(f"unkown GenericAlias {typeof._name}")
 
     if isinstance(value, typeof):
         return value
 
-    
     if dataclasses.is_dataclass(typeof):
-        as_dict = {field.name: cast(value[field.name], field.type) for field in dataclasses.fields(typeof) if field.name in value}
+        as_dict = {field.name: cast(value[field.name], field.type)
+                   for field in dataclasses.fields(typeof) if field.name in value}
         print(as_dict)
         return typeof(**as_dict)
 
     if typeof is list:
         return [v for v in value]
     if typeof is dict:
-        return {k:v for k,v in value.items()}
+        return {k: v for k, v in value.items()}
     if issubclass(typeof, enum.Enum):
         return typeof[value]
     if isinstance(value, dict):
@@ -58,6 +61,9 @@ def cast(value, typeof):
 
 
 def normal(value):
+    """
+    Convert a python object to normal form (so it can be json serlized)
+    """
     if isinstance(value, (str, int, bool)):
         return value
     if isinstance(value, dict):

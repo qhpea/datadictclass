@@ -4,6 +4,7 @@ import typing
 import enum
 import smartcast
 
+
 class Ez(enum.Enum):
     MAX = enum.auto()
     PAIN = enum.auto()
