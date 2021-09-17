@@ -8,7 +8,7 @@ site.ENABLE_USER_SITE = True
 
 setuptools.setup(
     name="smartcast",
-    version="0.1.0",
+    version="0.2.0",
     author="QHPEA",
     author_email="oss@qhpea.org",
     description="Smartly cast python objects and dataclass to/from normal/json form",
