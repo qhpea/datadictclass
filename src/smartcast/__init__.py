@@ -1,102 +1,193 @@
+import inspect
 import typing
 
 import enum
 import dataclasses
 from typing import Any, Dict, List, MutableMapping, Mapping, Type, Union, TypeVar, Sequence
 from collections.abc import Iterable
+from datetime import datetime
 
-TNormal = Union[Dict[str, "TNormal"], List["TNormal"], bool, int, float, str, None]
 
-T = TypeVar('T') 
+TNormal = Union[Dict[str, "TNormal"],
+                List["TNormal"], bool, int, float, str, None]
+
+T = TypeVar('T')
 TC = Type[T]
 
 
-def _many_cast(value: TNormal, typeofs:List[Type[T]], strict: bool = True) -> T:
+class Converter:
+    def can_convert(self, typeof):
+        "is this evil"
+
+    def convert(self, value, typeof):
+        "do conversion of value to type"
+
+
+def get_args(typeof) -> typing.Tuple[typing.Type]:
+    if typeof == list:
+        return (typing.Any, )
+
+    if typeof == typing.Dict:
+        return (typing.Any, typing.Any)
+
+    if typeof is typing._SpecialForm:
+        return tuple(typeof._subs_tree()[1:])
+
+    if type(typeof) == typing._GenericAlias:
+        return typeof.__args__
+    if hasattr(typing, "_UnionGenericAlias") and type(typeof) == getattr(typing, "_UnionGenericAlias"):
+        return typeof.__args__
+
+    raise TypeError(f"can't find type args for {typeof}")
+
+
+def is_any(typeof):
+    return typeof == typing.Any
+
+
+def cast_any(value, typeof):
+    return value
+
+
+def is_list(typeof):
+    if typeof == list:
+        return True
+    if type(typeof) == typing._GenericAlias and typeof._name in ["List"]:
+        return True
+    return False
+
+
+def cast_list(value, typeof):
+    (list_type, ) = get_args(typeof)
+    return [cast(v, list_type) for v in value]
+
+
+def is_class(typeof):
+    return inspect.isclass(typeof)
+
+
+def cast_class(value, typeof, *, strict=True):
+    attrs = typing.get_type_hints(typeof)
+    out = typeof()
+    assert attrs.keys() >= value.keys(), "source has unkown key type"
+    for attr, typeof in attrs.items():
+        if attr in value:
+            value = value[attr]
+            setattr(out, attr, cast(typeof, value))
+        elif not hasattr(out, attr):
+            raise Exception(f"{typeof} missing required value for {attr}")
+    return out
+
+
+def is_enum(typeof):
+    return is_class(typeof) and issubclass(typeof, enum.Enum)
+
+
+def cast_enum(value, typeof):
+    return typeof[value]
+
+
+def is_union(typeof):
+    if typeof is typing._SpecialForm and typeof._name == 'Union':
+        return True
+    if hasattr(typing, "_UnionGenericAlias") and type(typeof) == getattr(typing, "_UnionGenericAlias"):
+        return True
+    if type(typeof) == typing._GenericAlias:
+        typename = typeof._name
+        if typename == "Union":
+            return True
+        if typename is None and typeof.__origin__ == typing.Union:
+            return True
+    return False
+
+
+def cast_union(value, typeof):
+    typeofs = get_args(typeof)
     for typeof in typeofs:
         try:
             return cast(value, typeof)
-        except Exception:
+        except:
             pass
-    raise Exception(f"{value} not any of valid types {typeofs}")
+    raise TypeError(f"{value} not any of valid types {typeofs}")
 
-# flake8: noqa: C901
-def cast(value: TNormal, typeof:Type[T], strict: bool = True) -> T:
-    """
-    Cast an normal (json) object to specfied type.
-    """
-    #log(f"cast {value} to {typeof}")
 
-    if typeof is None and not value:
-        return None
+def is_dict(typeof):
+    if typeof == dict:
+        return True
+    if type(typeof) == typing._GenericAlias and typeof._name in ["Dict", "MutableMapping", "Mapping"]:
+        return True
+    return False
 
-    if typeof is bool and isinstance(value, (str, bool)):
-        return bool(value)
-    if typeof is str and isinstance(value, (str)):
-        return str(value)
-    if typeof is int and isinstance(value, (str, int)):
-        return int(value)
-    if typeof is float and isinstance(value, (str, int, float)):
-        return float(value)
 
-    if typeof is typing.Union:
-        raise Exception("typing.Union is not a valid type")
+def cast_dict(value, typeof):
+    (kt, vt) = get_args(typeof)
+    return {cast(k, kt): cast(v, vt) for k, v in value.items()}
 
-    # TODO handle datatype specificly
-    if typeof is typing._SpecialForm and typeof._name == 'Union':
-        possibe_types = typeof._subs_tree()[1:]
-        return _many_cast(value, possibe_types, strict=strict)
-    if hasattr(typing, "_UnionGenericAlias") and type(typeof) == getattr(typing, "_UnionGenericAlias"):
-      
-        possibe_types = list(typeof.__args__)
-        return _many_cast(value, possibe_types, strict=strict)
-        
-    
-    if type(typeof) == typing._GenericAlias:
-        
-        typename = typeof._name
-        if typename is None:
-            if typeof.__origin__ == typing.Union:
-                typename = "Union"
-        typeparams = typeof.__args__
-        if typeof._name == "List":
-            (list_type, ) = typeparams
-            return [cast(v, list_type) for v in value]
-        if typename == "Union":
-            return _many_cast(value, typeparams, strict=strict)
-        if typeof._name in ["Dict", "MutableMapping", "Mapping"]:
-            (kt, vt) = typeparams
-            return {cast(k, kt): cast(v, vt) for k,v in value.items()}
-        raise Exception(f"unkown GenericAlias {typename}")
 
-    if isinstance(value, typeof):
-        return value
+def is_none(typeof):
+    return typeof == None or is_class(typeof) and typeof.__name__ == "NoneType"
 
-    if dataclasses.is_dataclass(typeof):
-        
-        as_dict = {field.name: cast(value[field.name], field.type)
-                   for field in dataclasses.fields(typeof) if field.name in value}
-        return typeof(**as_dict)
 
-    if typeof is list:
-        return [v for v in value]
-    if typeof is dict:
-        return {k: v for k, v in value.items()}
-    if issubclass(typeof, enum.Enum):
-        return typeof[value]
-    if isinstance(value, dict):
-        attrs = typing.get_type_hints(typeof)
-        out = typeof()
-        assert not strict or attrs.keys() >= value.keys(), "source has unkown key type"
-        for attr, typeof in attrs.items():
-            if attr in value:
-                value = value[attr]
-                setattr(out, attr, cast(typeof, value))
-            elif not hasattr(out, attr):
-                raise Exception(f"{typeof} missing required value for {attr}")
-        return out
-    # TODO dict
-    # TODO list
-    raise Exception(f"can't cast {value} to {typeof}")
+def cast_none(value, typeof):
+    return None
+
+
+def is_int(typeof):
+    return typeof == int
+
+
+def is_float(typeof):
+    return typeof == float
+
+
+def is_bool(typeof):
+    return typeof == bool
+
+
+def is_str(typeof):
+    return typeof == str
+
+
+def is_datetime(typeof):
+    return typeof == datetime
+
+
+def cast_primitive(value, typeof):
+    assert value is not None
+    return typeof(value)
+
+
+def is_dataclass(typeof):
+    #assert isinstance(typeof, type)
+    return dataclasses.is_dataclass(typeof)
+
+
+def cast_dataclass(value, typeof, *, strict=True):
+    as_dict = {field.name: cast(value[field.name], field.type)
+               for field in dataclasses.fields(typeof) if field.name in value}
+    return typeof(**as_dict)
+
+
+CASTERS = [
+    (is_none, cast_none),
+    (is_int, cast_primitive),
+    (is_float, cast_primitive),
+    (is_bool, cast_primitive),
+    (is_str, cast_primitive),
+    (is_enum, cast_enum),
+    (is_dict, cast_dict),
+    (is_list, cast_list),
+    (is_union, cast_union),
+    (is_dataclass, cast_dataclass),
+    (is_class, cast_class)
+]
+
+
+def cast(value: TNormal, typeof: Type[T], strict: bool = True) -> T:
+    for test, caster in CASTERS:
+        if(test(typeof)):
+            return caster(value, typeof)
+    raise TypeError(f"can't cast {value} to {typeof}")
 
 
 def normal(value: Any) -> TNormal:
@@ -117,3 +208,5 @@ def normal(value: Any) -> TNormal:
         return normal(dataclasses.asdict(value))
     return normal(value.__dict__)
 
+
+__all__ = ["cast", "normal"]
