@@ -10,12 +10,21 @@ TNormal = Union[Dict[str, "TNormal"], List["TNormal"], bool, int, float, str, No
 T = TypeVar('T') 
 TC = Type[T]
 
+
+def _many_cast(value: TNormal, typeofs:List[Type[T]], strict: bool = True) -> T:
+    for typeof in typeofs:
+        try:
+            return cast(value, typeof)
+        except Exception:
+            pass
+    raise Exception(f"{value} not any of valid types {typeofs}")
+
 # flake8: noqa: C901
 def cast(value: TNormal, typeof:Type[T], strict: bool = True) -> T:
     """
     Cast an normal (json) object to specfied type.
     """
-    #print(f"cast {value} to {typeof}")
+    #log(f"cast {value} to {typeof}")
 
     if typeof is None and not value:
         return None
@@ -31,31 +40,33 @@ def cast(value: TNormal, typeof:Type[T], strict: bool = True) -> T:
 
     if typeof is typing.Union:
         raise Exception("typing.Union is not a valid type")
-    
-    if isinstance(typeof, Iterable):
-        for try_type in typeof:
-            try:
-                return cast(value, try_type)
-            except Exception:
-                pass
+
     # TODO handle datatype specificly
     if typeof is typing._SpecialForm and typeof._name == 'Union':
         possibe_types = typeof._subs_tree()[1:]
-        return cast(value, possibe_types, strict=strict)
-    if type(typeof) == typing._UnionGenericAlias:
+        return _many_cast(value, possibe_types, strict=strict)
+    if hasattr(typing, "_UnionGenericAlias") and type(typeof) == getattr(typing, "_UnionGenericAlias"):
       
         possibe_types = list(typeof.__args__)
-        return cast(value, possibe_types, strict=strict)
+        return _many_cast(value, possibe_types, strict=strict)
         
     
     if type(typeof) == typing._GenericAlias:
+        
+        typename = typeof._name
+        if typename is None:
+            if typeof.__origin__ == typing.Union:
+                typename = "Union"
+        typeparams = typeof.__args__
         if typeof._name == "List":
-            (list_type, ) = typeof.__args__
+            (list_type, ) = typeparams
             return [cast(v, list_type) for v in value]
+        if typename == "Union":
+            return _many_cast(value, typeparams, strict=strict)
         if typeof._name in ["Dict", "MutableMapping", "Mapping"]:
-            (kt, vt) = typeof.__args__
+            (kt, vt) = typeparams
             return {cast(k, kt): cast(v, vt) for k,v in value.items()}
-        raise Exception(f"unkown GenericAlias {typeof._name}")
+        raise Exception(f"unkown GenericAlias {typename}")
 
     if isinstance(value, typeof):
         return value
@@ -64,7 +75,6 @@ def cast(value: TNormal, typeof:Type[T], strict: bool = True) -> T:
         
         as_dict = {field.name: cast(value[field.name], field.type)
                    for field in dataclasses.fields(typeof) if field.name in value}
-        print(dataclasses,  as_dict)
         return typeof(**as_dict)
 
     if typeof is list:
