@@ -11,7 +11,7 @@ setuptools.setup(
     version="0.2.0",
     author="QHPEA",
     author_email="oss@qhpea.org",
-    description="Smartly cast python objects and dataclass to/from normal/json form",
+    description="Recursively cast json to python dataclasses, typing, and class. Also provides reverse.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/qhpea/smartcast",
