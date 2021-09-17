@@ -52,7 +52,7 @@ def cast_any(value, typeof):
 def is_list(typeof):
     if typeof == list:
         return True
-    if type(typeof) == typing._GenericAlias and typeof._name in ["List"]:
+    if is_generic_alias(typeof) and typeof._name in ["List"]:
         return True
     return False
 
@@ -77,6 +77,12 @@ def cast_class(value, typeof, *, strict=True):
         elif not hasattr(out, attr):
             raise Exception(f"{typeof} missing required value for {attr}")
     return out
+
+
+def is_generic_alias(typeof):
+    if hasattr(typing, "_SpecialGenericAlias") and type(typeof) == getattr(typing, "_SpecialGenericAlias"):
+        return True
+    return type(typeof) in [typing._GenericAlias]
 
 
 def is_enum(typeof):
@@ -114,7 +120,7 @@ def cast_union(value, typeof):
 def is_dict(typeof):
     if typeof == dict:
         return True
-    if type(typeof) == typing._GenericAlias and typeof._name in ["Dict", "MutableMapping", "Mapping"]:
+    if is_generic_alias(typeof) and typeof._name in ["Dict", "MutableMapping", "Mapping"]:
         return True
     return False
 
