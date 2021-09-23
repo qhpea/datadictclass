@@ -206,56 +206,6 @@ CASTERS = [
     (is_dataclass, cast_dataclass),
     (is_class, cast_class)
 ]
-
-
-
-
-def most(v):
-    return v[:-1]
-
-def last(v):
-    return v[-1]
-
-def first(v):
-    return v[0]
-
-
-def iter_most(v):
-    return v[:-1]
-
-def iter_last(v):
-    return v[-1]
-
-def iter_first(v):
-    return v[0]
-
-def first_rest(v):
-    return (first(v), rest(v))
-
-def renest(stuff):
-    for key, v in stuff:
-        key_head = key[0]
-        key_rest = key[1:]
-
-def normal_roughen(flat_str: Dict[str, str]):
-    "deflatten a dict flattend by normal_flatten into a normal form object"
-    flat = {parse_flat_path(k) : literal_eval(v) for k,v in flat_str.items()}
-    
-    values = {}
-
-    sorted_flat = sorted(flat, key = len)
-
-    for key, value in sorted_flat:
-        values[key] = value
-        for i in range(len(key)-1):
-            subkey = key[:i]
-            last = subkey[i]
-            if last is int:
-                values[subkey] = list()
-            elif last is dict:
-                values[subkey] = dict()
-            else:
-                raise TypeError(f"did not expect {last} in path")
     
 
 def cast(value: TNormal, typeof: Type[T], strict: bool = True) -> T:
