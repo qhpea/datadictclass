@@ -1,5 +1,7 @@
 from typing import Callable, TypeVar, Any
 
+from smartcast.symbols import NULL
+
 
 def identiy(x):
     return x
@@ -55,19 +57,3 @@ def apply(function, expr: list, levelspec = None):
     if levelspec is int:
         return apply(function, expr, {1, levelspec})
 
-
-def apply_to()
-
-
-Missing = Type("Missing")
-
-def operatable(f):
-    def wrapper(x, next = Missing, *args, **kwargs):
-        if next is Missing:
-            def op(*args, **kwargs):
-                return f(*args, **kwargs)
-            return op
-        f(x, next, *args, **kwargs)
-    return wrapper
-
-super_plus = operatable(plus)

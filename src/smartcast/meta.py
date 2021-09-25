@@ -1,6 +1,8 @@
 
 from typing import Sequence
-from smartcast.abstract import get_abstract_methods
+from .abstract import get_abstract_methods
+from .iter import all_true, as_sequence, list_q
+from .symbols import NULL
 
 class Forwarder:
     def __init__(self) -> None:
@@ -33,3 +35,20 @@ def forward(cls, to= "value", *fields: Sequence[str]):
     
     cls.__setup_
     return cls
+
+
+def listable(function):
+    def wrap(*args, **kwargs):
+        all_args_are_list = all_true(args, as_sequence)
+        
+        if all_args_are_list and
+        if as_sequence(first) and not args and not kwargs:
+
+def operatable(f):
+    def wrapper(x, next = NULL, *args, **kwargs):
+        if next is NULL:
+            def op(*args, **kwargs):
+                return f(*args, **kwargs)
+            return op
+        f(x, next, *args, **kwargs)
+    return wrapper

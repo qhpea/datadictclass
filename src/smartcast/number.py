@@ -7,26 +7,8 @@ from numbers import Integral, Number, Real
 
 from smartcast.abstract import get_abstract_methods
 from .types import type_of
+from .numeric_machine import C_NUMBER_TYPES, C_INT_TYPES, C_FLOAT_TYPES
 
-C_UINT_TYPES = {c_ubyte, c_ushort, c_uint, c_ulong, c_ulonglong}
-C_SINT_TYPES = {c_byte, c_short, c_int, c_long, c_longlong}
-C_FLOAT_TYPES = {c_float, c_double, c_longdouble}
-C_INT_TYPES = C_UINT_TYPES | C_SINT_TYPES
-C_NUMBER_TYPES = C_INT_TYPES | C_FLOAT_TYPES
-PYTHON_NUMBER_TYPES = {float, int}
-NUMBER_TYPES = C_NUMBER_TYPES | C_NUMBER_TYPES
-
-NativeIntegerSigned = Union[c_byte, c_short, c_int, c_long, c_longlong]
-NativeIntegerUnsigned = Union[c_ubyte, c_ushort, c_uint, c_ulong, c_ulonglong]
-NativeInteger = Union[NativeIntegerSigned, NativeIntegerUnsigned]
-NativeInexactNumber = Union[float, c_float, c_double, c_longdouble]
-NativeNumber = Union[NativeInexactNumber, NativeInteger]
-PythonNumber = Union[int, float]
-
-Integer = Union[int, NativeInteger]
-InexactNumber = Union[float, NativeInexactNumber]
-
-AnyNumber = Union[PythonNumber, NativeNumber]
 
 
 NUMERIC_TYPE_FUNCTIONS_NAMES = [
@@ -48,11 +30,10 @@ NUMERIC_TYPE_FUNCTIONS_NAMES = [
 
 
 
+
 def c_as_python(value):
     assert type(value) in C_NUMBER_TYPES, "must be a machine number type"
     return value.value
-
-
 
 def integer_q(value):
     if value is int:
@@ -70,6 +51,7 @@ def c_number_q(value):
     return type(value) in C_NUMBER_TYPES
 
 def machine_number_q(value):
+    "is this a machine percesion number"
     return value is float or c_number_q(value)
 
 def python_number_q(value):
@@ -90,7 +72,7 @@ def number_as_python(value):
 
 
 
-def as_int(value: NativeInteger):
+def as_int(value):
     assert integer_q(value)
     if value is int:
         return value

@@ -6,27 +6,14 @@ from .expression import *
 from dataclasses import make_dataclass, field
 
 
-def HeadType(name, **params):
-    symbol = Symbol(name)
+from .expression_typed import TypedExpression
 
-    fields = [(name, typeof, field(default=None, type = typeof)) for name, typeof in params.items()]
-    fields.append("head", type(symbol), field(default=symbol, init=False))
+Blank = TypedExpression("Blank", head=Expression)
+BlankSequence = TypedExpression("BlankSequance", head=Expression)
+BlankNullSequance = TypedExpression("BlankNullSequence", head=Expression)
+Pattern = TypedExpression("Pattern", sym=Symbol, obj=Expression)
 
-    cls = make_dataclass(name, fields=fields, bases=(Expression,))
-
-
-    cls.SYMBOL = symbol
-
-    # def __init__(self, *args, **kwargs):
-    #     super(self).__init__(symbol, *args, **kwargs)
-    # cls.__init__ = __init__
-    return cls
-
-
-Blank = HeadType("Blank", head=Expression)
-BlankSequence = HeadType("BlankSequance", head=Expression)
-BlankNullSequance = HeadType("BlankNullSequence", head=Expression)
-Pattern = HeadType("Pattern", sym=Symbol, obj=Expression)
+Missing("Missing", reason = String)
 
 Optional = HeadType("Optional", )
 

@@ -5,11 +5,8 @@ from typing import List, Type
 from .symbol import *
 from .fun import identiy
 
-NUMBER = Symbol("Number")
-ALL = Symbol("All")
-INFINITY = Symbol("Infinity")
-NULL = Symbol("Null")
-LIST = Symbol("List")
+from .symbols import *
+
 
 LevelSpec = Type("LevelSpec")
 
@@ -50,3 +47,15 @@ def flatten(iterable: Expression, n = 1) -> Expression:
     for v in iterable:
         if False:
             pass
+
+def head(expr):
+    return expr.head
+
+def position(expr, value, levelspec = NULL, n = INFINITY):
+    pass
+
+
+def operate(p, expr):
+    new_head = p(head(expr))
+    return Expression(head = )
+    (body(expr))

@@ -6,6 +6,7 @@ import numbers
 from typing import Sequence, Union
 
 from smartcast.abstract import get_abstract_methods
+from smartcast.types import type_of
 from .meta_foward import forward
 
 C_UINT_TYPES = {c_ubyte, c_ushort, c_uint, c_ulong, c_ulonglong}
@@ -16,11 +17,8 @@ C_NUMBER_TYPES = C_INT_TYPES | C_FLOAT_TYPES
 PYTHON_NUMBER_TYPES = {float, int}
 NUMBER_TYPES = C_NUMBER_TYPES | C_NUMBER_TYPES
 
-NativeIntegerSigned = Union[c_byte, c_short, c_int, c_long, c_longlong]
-NativeIntegerUnsigned = Union[c_ubyte, c_ushort, c_uint, c_ulong, c_ulonglong]
-NativeInteger = Union[NativeIntegerSigned, NativeIntegerUnsigned]
-NativeInexactNumber = Union[float, c_float, c_double, c_longdouble]
-NativeNumber = Union[NativeInexactNumber, NativeInteger]
+
+NEGATIVE_INFINITY = 
 
 def type_code(t) -> str:
     "get the array type code for a number"
@@ -32,6 +30,18 @@ def type_code(t) -> str:
     return t._type_
 
 
+
+def max_value(typeof):
+    typeof(-1)
+
+def min_value(typeof):
+    if type_of in C_UINT_TYPES:
+        return 0
+    
+
+def max_safe_integer(typeof):
+    if integer_q(type_of):
+        return
 
 
 @forward

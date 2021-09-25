@@ -1,7 +1,7 @@
 
 from collections.abc import MutableSequence, Sequence
 from typing import Any, Callable, Generic, Iterable, List, Type, TypeVar, Union
-from .fun import composition, identiy, logical_not
+from .fun import apply, composition, identiy, logical_not
 
 _T = TypeVar("_T")
 
@@ -26,9 +26,14 @@ def any_true(iterable: Iterable[_T], test: Callable[[_T], bool]) -> bool:
 def all_true(iterable: Iterable[_T], test: Callable[[_T], bool]) -> bool:
     return logical_not(any_true(iterable, composition(logical_not, test)))
 
+def group_by(by = identiy, items: Iterable = None):
+    assert items is not None, "need items"
 
 
-
+def map(function, expr, levelspec = {1}):
+    assert levelspec == {1}
+    
+    return apply(function, expr, levelspec={1} )
 
 
 
